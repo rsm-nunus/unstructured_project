@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Retail Chat Assistant</title>
+  <style>
+    /* Overall page styling to mimic an e-commerce feel */
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #F5F5F5;
+      color: #333;
+    }
+    header {
+      background-color: #131921;
+      color: #fff;
+      padding: 15px 20px;
+      text-align: center;
+      font-size: 24px;
+      font-weight: bold;
+    }
+    .container {
+      display: flex;
+      justify-content: center;
+      padding: 30px;
+    }
+    #chatbot-container {
+      width: 350px;
+      height: 550px;
+      background: #fff;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      display: flex;
+      flex-direction: column;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    #chat-window {
+      flex: 1;
+      padding: 15px;
+      overflow-y: auto;
+      border-bottom: 1px solid #e1e1e1;
+      background-color: #fafafa;
+    }
+    .message {
+      margin: 10px 0;
+      padding: 10px 15px;
+      border-radius: 20px;
+      max-width: 80%;
+      line-height: 1.4;
+    }
+    .user {
+      background: #0084ff;
+      color: #fff;
+      align-self: flex-end;
+    }
+    .bot {
+      background: #e5e5ea;
+      color: #000;
+      align-self: flex-start;
+    }
+    #input-area {
+      display: flex;
+      flex-direction: column;
+      padding: 10px;
+    }
+    /* Optional: add a little style for query type selection */
+    #query-type {
+      margin-bottom: 10px;
+      text-align: center;
+    }
+    #query-type label {
+      margin: 0 10px;
+      font-size: 14px;
+    }
+    #query-area {
+      display: flex;
+    }
+    #chat-input {
+      flex: 1;
+      padding: 10px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 4px 0 0 4px;
+    }
+    #send-button {
+      padding: 10px 15px;
+      font-size: 14px;
+      border: none;
+      background: #FF9900;  /* Amazon-like accent color */
+      color: #fff;
+      cursor: pointer;
+      border-radius: 0 4px 4px 0;
+    }
+    #send-button:hover {
+      background: #e68a00;
+    }
+  </style>
+</head>
+<body>
+  <header>Retail Chat Assistant</header>
+  <div class="container">
+    <div id="chatbot-container">
+      <div id="chat-window"></div>
+      <div id="input-area">
+        <!-- Query type selection -->
+        <div id="query-type">
+          <label>
+            <input type="radio" name="query_type" value="faq" checked> FAQ
+          </label>
+          <label>
+            <input type="radio" name="query_type" value="product"> Product
+          </label>
+        </div>
+        <!-- Query input -->
+        <div id="query-area">
+          <input type="text" id="chat-input" placeholder="Type your message here..." />
+          <button id="send-button">Send</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const chatWindow = document.getElementById('chat-window');
+    const chatInput = document.getElementById('chat-input');
+    const sendButton = document.getElementById('send-button');
+
+    // Function to add a message bubble
+    function addMessage(message, sender) {
+      const msgDiv = document.createElement('div');
+      msgDiv.classList.add('message', sender);
+      msgDiv.textContent = message;
+      chatWindow.appendChild(msgDiv);
+      chatWindow.scrollTop = chatWindow.scrollHeight;
+    }
+
+    // Display a welcome message from the bot on page load
+    window.addEventListener('load', () => {
+      addMessage("Hi, how can I help you?", 'bot');
+    });
+
+    // Function to get the selected query type from radio buttons
+    function getSelectedQueryType() {
+      const radios = document.getElementsByName('query_type');
+      for (let radio of radios) {
+        if (radio.checked) {
+          return radio.value;
+        }
+      }
+      return 'faq'; // default
+    }
+
+    // Function to send user query to the backend
+    async function sendQuery() {
+      const userMessage = chatInput.value.trim();
+      if (!userMessage) return;
+      addMessage(userMessage, 'user');
+      chatInput.value = '';
+
+      // Get the query type selected by the user
+      const queryType = getSelectedQueryType();
+
+      try {
+        // Send the query to the backend. Adjust the payload if necessary.
+        const response = await fetch('/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ query: userMessage, query_type: queryType })
+        });
+
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+
+        const data = await response.json();
+        addMessage(data.response, 'bot');
+      } catch (error) {
+        console.error('Error fetching chatbot response:', error);
+        addMessage("Sorry, there was an error processing your request.", 'bot');
+      }
+    }
+
+    sendButton.addEventListener('click', sendQuery);
+
+    // Allow sending message on Enter key press
+    chatInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        sendQuery();
+      }
+    });
+  </script>
+</body>
+</html>
